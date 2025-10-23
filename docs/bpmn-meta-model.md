@@ -1,4 +1,6 @@
-# bpmn
+# BPMN Meta-Model (Mermaid Diagram)
+
+```mermaid
 classDiagram
   direction LR
 
@@ -25,18 +27,18 @@ classDiagram
   }
 
   class Task {
-    +taskType: enum  // user, service, script, send, receive, manual, callActivity, subProcess
-    +loopType: enum? // none, standard, multiInstance
+    +taskType: enum
+    +loopType: enum?
   }
 
   class Event {
-    +eventType: enum  // start, intermediate, end
-    +trigger: enum?   // message, timer, error, signal, escalation, link, conditional, terminate, none
-    +catchThrow: enum // catch, throw (for intermediate)
+    +eventType: enum
+    +trigger: enum?
+    +catchThrow: enum
   }
 
   class Gateway {
-    +gatewayType: enum // exclusive(XOR), inclusive(OR), parallel(AND), complex, eventBased
+    +gatewayType: enum
     +defaultFlow: SequenceFlow?
   }
 
@@ -65,7 +67,7 @@ classDiagram
 
   class Association {
     +id: string
-    +associationType: enum // dataAssociation, annotation
+    +associationType: enum
   }
 
   class TextAnnotation {
@@ -73,27 +75,17 @@ classDiagram
     +text: string
   }
 
-  %% Inheritance
   FlowNode <|-- Task
   FlowNode <|-- Event
   FlowNode <|-- Gateway
-
-  %% Containment / membership
   Process "1" o-- "1..*" FlowNode : contains
   Pool "1" o-- "1" Process : encapsulates
   Pool "1" o-- "0..*" Lane
   Lane "1" o-- "0..*" FlowNode : partitions
-
-  %% Control flow
   SequenceFlow "0..*" --> "1" FlowNode : target
   FlowNode "1" --> "0..*" SequenceFlow : outgoing
-
-  %% Message flow (cross-pool only)
   MessageFlow "0..*" --> "1" FlowNode : target
   FlowNode "1" --> "0..*" MessageFlow : outgoing
-
-  %% Data
-  DataObject "0..*" <-- Association : data input/output
+  DataObject "0..*" <-- Association : data
   DataStore  "0..*" <-- Association
   TextAnnotation "0..*" <-- Association
-
