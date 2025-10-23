@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mermaid BPMN Diagram Creator</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            min-height: 600px;
+        }
+
+        .editor-panel, .preview-panel {
+            padding: 30px;
+        }
+
+        .editor-panel {
+            background: #f8f9fa;
+            border-right: 1px solid #e0e0e0;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .panel-header h2 {
+            color: #333;
+            font-size: 1.5em;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: #6c757d;
+        }
+
+        button.secondary:hover {
+            background: #5a6268;
+        }
+
+        textarea {
+            width: 100%;
+            height: 450px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .preview-panel {
+            background: white;
+            overflow: auto;
+        }
+
+        #diagram {
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fafafa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .examples {
+            background: #f0f4ff;
+            padding: 20px;
+            margin: 20px 30px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .examples h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .example-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .example-item:hover {
+            background: #e8eeff;
+            transform: translateX(5px);
+        }
+
+        .example-item h4 {
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .example-item code {
+            display: block;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            display: none;
+            animation: slideIn 0.3s ease;
+            z-index: 1000;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification.show {
+            display: block;
+        }
+
+        @media (max-width: 968px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .editor-panel {
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔄 Mermaid BPMN Diagram Creator</h1>
+            <p>Create beautiful BPMN diagrams with copy-paste simplicity</p>
+        </header>
+
+        <div class="main-content">
+            <div class="editor-panel">
+                <div class="panel-header">
+                    <h2>Editor</h2>
+                    <div class="button-group">
+                        <button onclick="clearEditor()" class="secondary">Clear</button>
+                        <button onclick="copyToClipboard()">Copy Code</button>
+                    </div>
+                </div>
+                <textarea id="mermaid-input" placeholder="Paste or type your Mermaid BPMN code here...
+
+Example:
+graph TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Process]
+    B -->|No| D[End]
+    C --> D">graph TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Process]
+    B -->|No| D[End]
+    C --> D</textarea>
+            </div>
+
+            <div class="preview-panel">
+                <div class="panel-header">
+                    <h2>Preview</h2>
+                    <div class="button-group">
+                        <button onclick="renderDiagram()">Render</button>
+                        <button onclick="downloadSVG()" class="secondary">Download SVG</button>
+                    </div>
+                </div>
+                <div id="diagram"></div>
+            </div>
+        </div>
+
+        <div class="examples">
+            <h3>📋 Quick Examples - Click to Use</h3>
+            
+            <div class="example-item" onclick="loadExample(this)">
+                <h4>Simple Process Flow</h4>
+                <code>graph TD
+    A[Start] --> B[Process Task]
+    B --> C{Decision}
+    C -->|Yes| D[Task A]
+    C -->|No| E[Task B]
+    D --> F[End]
+    E --> F</code>
+            </div>
+
+            <div class="example-item" onclick="loadExample(this)">
+                <h4>Approval Workflow</h4>
+                <code>graph TD
+    A[Submit Request] --> B{Manager Approval}
+    B -->|Approved| C[Process Request]
+    B -->|Rejected| D[Notify User]
+    C --> E{Quality Check}
+    E -->|Pass| F[Complete]
+    E -->|Fail| G[Rework]
+    G --> C
+    D --> H[End]
+    F --> H</code>
+            </div>
+
+            <div class="example-item" onclick="loadExample(this)">
+                <h4>Parallel Gateway</h4>
+                <code>graph TD
+    A[Start] --> B[Split Tasks]
+    B --> C[Task 1]
+    B --> D[Task 2]
+    B --> E[Task 3]
+    C --> F[Join]
+    D --> F
+    E --> F
+    F --> G[Continue Process]
+    G --> H[End]</code>
+            </div>
+
+            <div class="example-item" onclick="loadExample(this)">
+                <h4>Order Processing</h4>
+                <code>graph LR
+    A([Order Received]) --> B[Validate Order]
+    B --> C{Valid?}
+    C -->|Yes| D[Check Inventory]
+    C -->|No| E[Reject Order]
+    D --> F{In Stock?}
+    F -->|Yes| G[Process Payment]
+    F -->|No| H[Backorder]
+    G --> I{Payment OK?}
+    I -->|Yes| J[Ship Order]
+    I -->|No| K[Cancel Order]
+    J --> L([Complete])
+    E --> L
+    K --> L
+    H --> L</code>
+            </div>
+
+            <div class="example-item" onclick="loadExample(this)">
+                <h4>Subprocess with Lanes</h4>
+                <code>graph TD
+    subgraph Customer
+        A[Place Order]
+        G[Receive Goods]
+    end
+    
+    subgraph "Sales Department"
+        B[Review Order]
+        C[Prepare Invoice]
+    end
+    
+    subgraph Warehouse
+        D[Pick Items]
+        E[Pack Items]
+        F[Ship]
+    end
+    
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G</code>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // Get elements
+        const input = document.getElementById('mermaid-input');
+        const diagram = document.getElementById('diagram');
+        const notification = document.getElementById('notification');
+
+        // Initialize Mermaid when available
+        let mermaidReady = false;
+        
+        function initMermaid() {
+            if (typeof mermaid !== 'undefined') {
+                mermaid.initialize({ 
+                    startOnLoad: false,
+                    theme: 'default',
+                    securityLevel: 'loose',
+                    flowchart: {
+                        useMaxWidth: true,
+                        htmlLabels: true,
+                        curve: 'basis'
+                    }
+                });
+                mermaidReady = true;
+                renderDiagram(); // Render initial diagram
+            } else {
+                // Mermaid not loaded, show error
+                diagram.innerHTML = '<div style="color: #dc3545; padding: 20px; text-align: center;"><strong>Error:</strong> Mermaid library could not be loaded.<br>Please check your internet connection.</div>';
+            }
+        }
+
+        // Wait for Mermaid to load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initMermaid);
+        } else {
+            initMermaid();
+        }
+
+        // Auto-render on input change with debounce
+        let debounceTimer;
+        input.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                renderDiagram();
+            }, 1000);
+        });
+
+        // Render diagram function
+        async function renderDiagram() {
+            const code = input.value.trim();
+            
+            if (!code) {
+                diagram.innerHTML = '<p style="color: #999;">Enter Mermaid code to see the preview</p>';
+                return;
+            }
+
+            if (!mermaidReady) {
+                diagram.innerHTML = '<div style="color: #dc3545; padding: 20px; text-align: center;"><strong>Error:</strong> Mermaid library is not ready.<br>Please check your internet connection and refresh the page.</div>';
+                return;
+            }
+
+            try {
+                // Clear previous diagram
+                diagram.innerHTML = '';
+                
+                // Generate unique ID
+                const id = 'mermaid-' + Date.now();
+                
+                // Render the diagram
+                const { svg } = await mermaid.render(id, code);
+                diagram.innerHTML = svg;
+                
+                showNotification('Diagram rendered successfully!', 'success');
+            } catch (error) {
+                diagram.innerHTML = `<div style="color: #dc3545; padding: 20px;">
+                    <strong>Error rendering diagram:</strong><br>
+                    ${error.message}
+                </div>`;
+                showNotification('Error rendering diagram', 'error');
+            }
+        }
+
+        // Copy to clipboard
+        function copyToClipboard() {
+            const code = input.value;
+            navigator.clipboard.writeText(code).then(() => {
+                showNotification('Code copied to clipboard!', 'success');
+            }).catch(err => {
+                showNotification('Failed to copy code', 'error');
+            });
+        }
+
+        // Clear editor
+        function clearEditor() {
+            if (confirm('Are you sure you want to clear the editor?')) {
+                input.value = '';
+                diagram.innerHTML = '<p style="color: #999;">Enter Mermaid code to see the preview</p>';
+            }
+        }
+
+        // Download SVG
+        function downloadSVG() {
+            const svgElement = diagram.querySelector('svg');
+            
+            if (!svgElement) {
+                showNotification('No diagram to download', 'error');
+                return;
+            }
+
+            const svgData = svgElement.outerHTML;
+            const blob = new Blob([svgData], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'bpmn-diagram.svg';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            URL.revokeObjectURL(url);
+            showNotification('Diagram downloaded!', 'success');
+        }
+
+        // Load example
+        function loadExample(element) {
+            const code = element.querySelector('code').textContent;
+            input.value = code;
+            renderDiagram();
+            
+            // Scroll to editor
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        // Show notification
+        function showNotification(message, type = 'success') {
+            notification.textContent = message;
+            notification.style.background = type === 'success' ? '#28a745' : '#dc3545';
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
